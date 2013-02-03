@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="webgl-heatmap.js"></script>
+        <script type="text/javascript">
+            window.onload = function(){
+                var canvas = document.getElementsByTagName('canvas')[0];
+                var heatmap = createWebGLHeatmap({canvas: canvas});
+                //var heatmap = createWebGLHeatmap({width: 500, height: 500}); // statically sized heatmap
+
+                // just feeding some mouse coords
+                document.body.appendChild(heatmap.canvas);
+                canvas.onmousemove = function(event){
+                    var x = event.offsetX || event.clientX;
+                    var y = event.offsetY || event.clientY;
+                        
+                    //heatmap.addPoint(x, y, 100, 10/255);
+                    
+                    var count = 0;
+                    while(count < 200){
+                        var xoff = Math.random()*2-1;
+                        var yoff = Math.random()*2-1;
+                        var l = xoff*xoff + yoff*yoff;
+                        if(l > 1){
+                            continue;
+                        }
+                        var ls = Math.sqrt(l);
+                        xoff/=ls; yoff/=ls;
+                        xoff*=1-l; yoff*=1-l;
+                        count += 1;
+                        heatmap.addPoint(x+xoff*50, y+yoff*50, 20, 1/300);
+                    }
+                }
+                canvas.onclick = function(){
+                    heatmap.clear();
+                }
+
+                var raf = window.requestAnimationFrame || window.mozRequestAnimationFrame;
+
+                var update = function(){
+                    heatmap.adjustSize(); // can be commented out for statically sized heatmaps, resize clears the map
+                    heatmap.update(); // adds the buffered points
+                    heatmap.display(); // adds the buffered points
+                    //heatmap.multiply(0.9995);
+                    //heatmap.blur();
+                    //heatmap.clamp(0.0, 1.0); // depending on usecase you might want to clamp it
+                    raf(update);
+                }
+                raf(update);
+            }
+        </script>
+        <style type="text/css">
+            body,html,canvas{
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                font-family: sans-serif;
+                color: black;
+                overflow: hidden;
+            }
+            div.controls{
+                font-weight: bold;
+                position: absolute;
+                top: 10px;
+                left: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas></canvas>
+    </body>
+</html>
