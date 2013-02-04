@@ -411,7 +411,7 @@
       if (intensity == null) {
         intensity = 0.2;
       }
-      if (this.pointCount >= this.maxPointCount) {
+      if (this.pointCount >= this.maxPointCount - 1) {
         this.update();
       }
       y = this.height - y;

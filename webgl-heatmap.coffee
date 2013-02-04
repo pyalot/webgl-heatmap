@@ -351,7 +351,7 @@ class Heights
         @vertexBufferData[@bufferIndex++] = intensity
 
     addPoint: (x, y, size=50, intensity=0.2) ->
-        if @pointCount >= @maxPointCount
+        if @pointCount >= @maxPointCount - 1
             @update()
 
         #if @pointCount < @maxPointCount
