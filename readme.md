@@ -11,7 +11,7 @@ Live Demo at [codeflow.org](http://codeflow.org/entries/2013/feb/04/high-perform
 How to use it
 -------------
 
-Instanciate a new heatmap, errors can be one of:
+Instantiate a new heatmap, errors can be one of:
 
  * Webgl is not supported
  * No floating point texture support
