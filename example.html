@@ -5,7 +5,9 @@
         <script type="text/javascript">
             window.onload = function(){
                 var canvas = document.getElementsByTagName('canvas')[0];
-                var heatmap = createWebGLHeatmap({canvas: canvas});
+                var heatmap = createWebGLHeatmap({canvas: canvas, intensityToAlpha:true});
+                //var heatmap = createWebGLHeatmap({canvas: canvas, intensityToAlpha:true, gradientTexture:'deep-sea-gradient.png'});
+                //var heatmap = createWebGLHeatmap({canvas: canvas, intensityToAlpha:false, gradientTexture:'skyline-gradient.png'});
                 //var heatmap = createWebGLHeatmap({width: 500, height: 500}); // statically sized heatmap
 
                 // just feeding some mouse coords

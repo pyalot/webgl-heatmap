@@ -208,6 +208,13 @@
       return this;
     };
 
+    Texture.prototype.upload = function(data) {
+      this.width = data.width;
+      this.height = data.height;
+      this.gl.texImage2D(this.target, 0, this.channels, this.channels, this.type, data);
+      return this;
+    };
+
     Texture.prototype.linear = function() {
       this.gl.texParameteri(this.target, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
       this.gl.texParameteri(this.target, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
@@ -432,8 +439,8 @@
   WebGLHeatmap = (function() {
 
     function WebGLHeatmap(_arg) {
-      var quad, _ref, _ref1, _ref2;
-      _ref = _arg != null ? _arg : {}, this.canvas = _ref.canvas, this.width = _ref.width, this.height = _ref.height;
+      var getColorFun, gradientTexture, image, intensityToAlpha, output, quad, textureGradient, _ref, _ref1, _ref2;
+      _ref = _arg != null ? _arg : {}, this.canvas = _ref.canvas, this.width = _ref.width, this.height = _ref.height, intensityToAlpha = _ref.intensityToAlpha, gradientTexture = _ref.gradientTexture;
       if (!this.canvas) {
         this.canvas = document.createElement('canvas');
       }
@@ -459,9 +466,41 @@
       }
       this.gl.enableVertexAttribArray(0);
       this.gl.blendFunc(this.gl.ONE, this.gl.ONE);
+      if (gradientTexture) {
+        textureGradient = this.gradientTexture = new Texture(this.gl, {
+          channels: 'rgba'
+        }).bind(0).setSize(2, 2).linear().clampToEdge();
+        if (typeof gradientTexture === 'string') {
+          image = new Image();
+          image.onload = function() {
+            return textureGradient.bind().upload(image);
+          };
+          image.src = gradientTexture;
+        } else {
+          if (gradientTexture.width > 0 && gradientTexture.height > 0) {
+            textureGradient.upload(gradientTexture);
+          } else {
+            gradientTexture.onload = function() {
+              return textureGradient.upload(gradientTexture);
+            };
+          }
+        }
+        getColorFun = 'uniform sampler2D gradientTexture;\nvec3 getColor(float intensity){\n    return texture2D(gradientTexture, vec2(intensity, 0.0)).rgb;\n}';
+      } else {
+        textureGradient = null;
+        getColorFun = 'vec3 getColor(float intensity){\n    vec3 blue = vec3(0.0, 0.0, 1.0);\n    vec3 cyan = vec3(0.0, 1.0, 1.0);\n    vec3 green = vec3(0.0, 1.0, 0.0);\n    vec3 yellow = vec3(1.0, 1.0, 0.0);\n    vec3 red = vec3(1.0, 0.0, 0.0);\n\n    vec3 color = (\n        fade(-0.25, 0.25, intensity)*blue +\n        fade(0.0, 0.5, intensity)*cyan +\n        fade(0.25, 0.75, intensity)*green +\n        fade(0.5, 1.0, intensity)*yellow +\n        smoothstep(0.75, 1.0, intensity)*red\n    );\n    return color;\n}';
+      }
+      if (intensityToAlpha == null) {
+        intensityToAlpha = true;
+      }
+      if (intensityToAlpha) {
+        output = 'vec4(color*intensity, intensity)';
+      } else {
+        output = 'vec4(color, 1.0)';
+      }
       this.shader = new Shader(this.gl, {
         vertex: vertexShaderBlit,
-        fragment: fragmentShaderBlit + 'float linstep(float low, float high, float value){\n    return clamp((value-low)/(high-low), 0.0, 1.0);\n}\n\nfloat fade(float low, float high, float value){\n    float mid = (low+high)*0.5;\n    float range = (high-low)*0.5;\n    float x = 1.0 - clamp(abs(mid-value)/range, 0.0, 1.0);\n    return smoothstep(0.0, 1.0, x);\n}\nvoid main(){\n    float intensity = smoothstep(0.0, 1.0, texture2D(source, texcoord).r);\n\n    vec3 blue = vec3(0.0, 0.0, 1.0);\n    vec3 cyan = vec3(0.0, 1.0, 1.0);\n    vec3 green = vec3(0.0, 1.0, 0.0);\n    vec3 yellow = vec3(1.0, 1.0, 0.0);\n    vec3 red = vec3(1.0, 0.0, 0.0);\n\n    vec3 color = (\n        fade(-0.25, 0.25, intensity)*blue +\n        fade(0.0, 0.5, intensity)*cyan +\n        fade(0.25, 0.75, intensity)*green +\n        fade(0.5, 1.0, intensity)*yellow +\n        smoothstep(0.75, 1.0, intensity)*red\n    );\n\n    gl_FragColor = vec4(color*intensity, intensity);\n    //gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);\n}'
+        fragment: fragmentShaderBlit + ("float linstep(float low, float high, float value){\n    return clamp((value-low)/(high-low), 0.0, 1.0);\n}\n\nfloat fade(float low, float high, float value){\n    float mid = (low+high)*0.5;\n    float range = (high-low)*0.5;\n    float x = 1.0 - clamp(abs(mid-value)/range, 0.0, 1.0);\n    return smoothstep(0.0, 1.0, x);\n}\n\n" + getColorFun + "\n\nvoid main(){\n    float intensity = smoothstep(0.0, 1.0, texture2D(source, texcoord).r);\n    vec3 color = getColor(intensity);\n    gl_FragColor = " + output + ";\n}")
       });
       if ((_ref1 = this.width) == null) {
         this.width = this.canvas.offsetWidth || 2;
@@ -498,7 +537,10 @@
       this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.quad);
       this.gl.vertexAttribPointer(0, 4, this.gl.FLOAT, false, 0, 0);
       this.heights.nodeFront.bind(0);
-      this.shader.use().int('source', 0);
+      if (this.gradientTexture) {
+        this.gradientTexture.bind(1);
+      }
+      this.shader.use().int('source', 0).int('gradientTexture', 1);
       return this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
     };
 

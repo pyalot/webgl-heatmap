@@ -134,6 +134,13 @@ class Texture
         @gl.texImage2D @target, 0, @channels, @width, @height, 0, @channels, @type, null
         return @
     
+    upload: (data) ->
+        @width = data.width
+        @height = data.height
+
+        @gl.texImage2D @target, 0, @channels, @channels, @type, data
+        return @
+    
     linear: ->
         @gl.texParameteri @target, @gl.TEXTURE_MAG_FILTER, @gl.LINEAR
         @gl.texParameteri @target, @gl.TEXTURE_MIN_FILTER, @gl.LINEAR
@@ -368,7 +375,7 @@ class Heights
         @pointCount += 1
 
 class WebGLHeatmap
-    constructor: ({@canvas, @width, @height}={}) ->
+    constructor: ({@canvas, @width, @height, intensityToAlpha, gradientTexture}={}) ->
         @canvas = document.createElement('canvas') unless @canvas
         try
             @gl = @canvas.getContext('experimental-webgl', depth:false, antialias:false)
@@ -385,22 +392,30 @@ class WebGLHeatmap
         @gl.enableVertexAttribArray 0
         @gl.blendFunc @gl.ONE, @gl.ONE
 
-        @shader = new Shader @gl,
-            vertex: vertexShaderBlit
-            fragment: fragmentShaderBlit + '''
-                float linstep(float low, float high, float value){
-                    return clamp((value-low)/(high-low), 0.0, 1.0);
-                }
+        if gradientTexture
+            textureGradient = @gradientTexture = new Texture(@gl, channels:'rgba').bind(0).setSize(2, 2).linear().clampToEdge()
+            if typeof gradientTexture == 'string'
+                image = new Image()
+                image.onload = ->
+                    textureGradient.bind().upload(image)
+                image.src = gradientTexture
+            else
+                if gradientTexture.width > 0 and gradientTexture.height > 0
+                    textureGradient.upload(gradientTexture)
+                else
+                    gradientTexture.onload = ->
+                        textureGradient.upload(gradientTexture)
 
-                float fade(float low, float high, float value){
-                    float mid = (low+high)*0.5;
-                    float range = (high-low)*0.5;
-                    float x = 1.0 - clamp(abs(mid-value)/range, 0.0, 1.0);
-                    return smoothstep(0.0, 1.0, x);
+            getColorFun = '''
+                uniform sampler2D gradientTexture;
+                vec3 getColor(float intensity){
+                    return texture2D(gradientTexture, vec2(intensity, 0.0)).rgb;
                 }
-                void main(){
-                    float intensity = smoothstep(0.0, 1.0, texture2D(source, texcoord).r);
-
+            '''
+        else
+            textureGradient = null
+            getColorFun = '''
+                vec3 getColor(float intensity){
                     vec3 blue = vec3(0.0, 0.0, 1.0);
                     vec3 cyan = vec3(0.0, 1.0, 1.0);
                     vec3 green = vec3(0.0, 1.0, 0.0);
@@ -414,11 +429,39 @@ class WebGLHeatmap
                         fade(0.5, 1.0, intensity)*yellow +
                         smoothstep(0.75, 1.0, intensity)*red
                     );
-
-                    gl_FragColor = vec4(color*intensity, intensity);
-                    //gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);
+                    return color;
                 }
             '''
+
+        intensityToAlpha ?= true
+
+        if intensityToAlpha
+            output = 'vec4(color*intensity, intensity)'
+        else
+            output = 'vec4(color, 1.0)'
+
+        @shader = new Shader @gl,
+            vertex: vertexShaderBlit
+            fragment: fragmentShaderBlit + """
+                float linstep(float low, float high, float value){
+                    return clamp((value-low)/(high-low), 0.0, 1.0);
+                }
+
+                float fade(float low, float high, float value){
+                    float mid = (low+high)*0.5;
+                    float range = (high-low)*0.5;
+                    float x = 1.0 - clamp(abs(mid-value)/range, 0.0, 1.0);
+                    return smoothstep(0.0, 1.0, x);
+                }
+
+                #{getColorFun}
+
+                void main(){
+                    float intensity = smoothstep(0.0, 1.0, texture2D(source, texcoord).r);
+                    vec3 color = getColor(intensity);
+                    gl_FragColor = #{output};
+                }
+            """
 
         @width ?= @canvas.offsetWidth or 2
         @height ?= @canvas.offsetHeight or 2
@@ -458,7 +501,9 @@ class WebGLHeatmap
         @gl.bindBuffer @gl.ARRAY_BUFFER, @quad
         @gl.vertexAttribPointer(0, 4, @gl.FLOAT, false, 0, 0)
         @heights.nodeFront.bind(0)
-        @shader.use().int('source', 0)
+        if @gradientTexture
+            @gradientTexture.bind(1)
+        @shader.use().int('source', 0).int('gradientTexture', 1)
         @gl.drawArrays @gl.TRIANGLES, 0, 6
 
     update: ->

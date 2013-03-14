@@ -28,6 +28,14 @@ catch(error){
 }
 ```
 
+creation arguments
+
+ * canvas: the canvas you wish to draw on
+ * width: explicit width
+ * height: explicit height
+ * intensityToAlpha: defaults to true
+ * gradientTexture: texture used instead of color calculation, can be path or an image
+
 Add a data point.
 
  * x and y relative to the canvas in pixels
