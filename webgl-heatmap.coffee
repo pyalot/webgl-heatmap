@@ -188,9 +188,6 @@ vertexShaderBlit = '''
 fragmentShaderBlit = '''
     precision highp int;
     precision highp float;
-    precision highp vec2;
-    precision highp vec3;
-    precision highp vec4;
     uniform sampler2D source;
     varying vec2 texcoord;
 '''
@@ -215,9 +212,6 @@ class Heights
             fragment: '''
                 precision highp int;
                 precision highp float;
-                precision highp vec2;
-                precision highp vec3;
-                precision highp vec4;
                 varying vec2 off, dim;
                 varying float vIntensity;
                 void main(){

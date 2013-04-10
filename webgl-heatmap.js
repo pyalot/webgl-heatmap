@@ -283,7 +283,7 @@
 
   vertexShaderBlit = 'attribute vec4 position;\nvarying vec2 texcoord;\nvoid main(){\n    texcoord = position.xy*0.5+0.5;\n    gl_Position = position;\n}';
 
-  fragmentShaderBlit = 'precision highp int;\nprecision highp float;\nprecision highp vec2;\nprecision highp vec3;\nprecision highp vec4;\nuniform sampler2D source;\nvarying vec2 texcoord;';
+  fragmentShaderBlit = 'precision highp int;\nprecision highp float;\nuniform sampler2D source;\nvarying vec2 texcoord;';
 
   Heights = (function() {
 
@@ -295,7 +295,7 @@
       this.height = height;
       this.shader = new Shader(this.gl, {
         vertex: 'attribute vec4 position, intensity;\nvarying vec2 off, dim;\nvarying float vIntensity;\nuniform vec2 viewport;\n\nvoid main(){\n    dim = abs(position.zw);\n    off = position.zw;\n    vec2 pos = position.xy + position.zw;\n    vIntensity = intensity.x;\n    gl_Position = vec4((pos/viewport)*2.0-1.0, 0.0, 1.0);\n}',
-        fragment: 'precision highp int;\nprecision highp float;\nprecision highp vec2;\nprecision highp vec3;\nprecision highp vec4;\nvarying vec2 off, dim;\nvarying float vIntensity;\nvoid main(){\n    float falloff = (1.0 - smoothstep(0.0, 1.0, length(off/dim)));\n    float intensity = falloff*vIntensity;\n    gl_FragColor = vec4(intensity);\n}'
+        fragment: 'precision highp int;\nprecision highp float;\nvarying vec2 off, dim;\nvarying float vIntensity;\nvoid main(){\n    float falloff = (1.0 - smoothstep(0.0, 1.0, length(off/dim)));\n    float intensity = falloff*vIntensity;\n    gl_FragColor = vec4(intensity);\n}'
       });
       this.clampShader = new Shader(this.gl, {
         vertex: vertexShaderBlit,
