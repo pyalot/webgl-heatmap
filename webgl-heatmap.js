@@ -439,8 +439,8 @@
   WebGLHeatmap = (function() {
 
     function WebGLHeatmap(_arg) {
-      var getColorFun, gradientTexture, image, intensityToAlpha, output, quad, textureGradient, _ref, _ref1, _ref2;
-      _ref = _arg != null ? _arg : {}, this.canvas = _ref.canvas, this.width = _ref.width, this.height = _ref.height, intensityToAlpha = _ref.intensityToAlpha, gradientTexture = _ref.gradientTexture;
+      var alphaEnd, alphaRange, alphaStart, getColorFun, gradientTexture, image, intensityToAlpha, output, quad, textureGradient, _ref, _ref1, _ref2, _ref3;
+      _ref = _arg != null ? _arg : {}, this.canvas = _ref.canvas, this.width = _ref.width, this.height = _ref.height, intensityToAlpha = _ref.intensityToAlpha, gradientTexture = _ref.gradientTexture, alphaRange = _ref.alphaRange;
       if (!this.canvas) {
         this.canvas = document.createElement('canvas');
       }
@@ -494,18 +494,19 @@
         intensityToAlpha = true;
       }
       if (intensityToAlpha) {
-        output = 'vec4(color*intensity, intensity)';
+        _ref1 = alphaRange != null ? alphaRange : [0, 1], alphaStart = _ref1[0], alphaEnd = _ref1[1];
+        output = "vec4 alphaFun(vec3 color, float intensity){\n    float alpha = smoothstep(" + (alphaStart.toFixed(8)) + ", " + (alphaEnd.toFixed(8)) + ", intensity);\n    return vec4(color*alpha, alpha);\n}";
       } else {
-        output = 'vec4(color, 1.0)';
+        output = 'vec4 alphaFun(vec3 color, float intensity){\n    return vec4(color, 1.0);\n}';
       }
       this.shader = new Shader(this.gl, {
         vertex: vertexShaderBlit,
-        fragment: fragmentShaderBlit + ("float linstep(float low, float high, float value){\n    return clamp((value-low)/(high-low), 0.0, 1.0);\n}\n\nfloat fade(float low, float high, float value){\n    float mid = (low+high)*0.5;\n    float range = (high-low)*0.5;\n    float x = 1.0 - clamp(abs(mid-value)/range, 0.0, 1.0);\n    return smoothstep(0.0, 1.0, x);\n}\n\n" + getColorFun + "\n\nvoid main(){\n    float intensity = smoothstep(0.0, 1.0, texture2D(source, texcoord).r);\n    vec3 color = getColor(intensity);\n    gl_FragColor = " + output + ";\n}")
+        fragment: fragmentShaderBlit + ("float linstep(float low, float high, float value){\n    return clamp((value-low)/(high-low), 0.0, 1.0);\n}\n\nfloat fade(float low, float high, float value){\n    float mid = (low+high)*0.5;\n    float range = (high-low)*0.5;\n    float x = 1.0 - clamp(abs(mid-value)/range, 0.0, 1.0);\n    return smoothstep(0.0, 1.0, x);\n}\n\n" + getColorFun + "\n" + output + "\n\nvoid main(){\n    float intensity = smoothstep(0.0, 1.0, texture2D(source, texcoord).r);\n    vec3 color = getColor(intensity);\n    gl_FragColor = alphaFun(color, intensity);\n}")
       });
-      if ((_ref1 = this.width) == null) {
+      if ((_ref2 = this.width) == null) {
         this.width = this.canvas.offsetWidth || 2;
       }
-      if ((_ref2 = this.height) == null) {
+      if ((_ref3 = this.height) == null) {
         this.height = this.canvas.offsetHeight || 2;
       }
       this.canvas.width = this.width;

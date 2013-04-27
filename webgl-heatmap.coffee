@@ -369,7 +369,7 @@ class Heights
         @pointCount += 1
 
 class WebGLHeatmap
-    constructor: ({@canvas, @width, @height, intensityToAlpha, gradientTexture}={}) ->
+    constructor: ({@canvas, @width, @height, intensityToAlpha, gradientTexture, alphaRange}={}) ->
         @canvas = document.createElement('canvas') unless @canvas
         try
             @gl = @canvas.getContext('experimental-webgl', depth:false, antialias:false)
@@ -430,9 +430,19 @@ class WebGLHeatmap
         intensityToAlpha ?= true
 
         if intensityToAlpha
-            output = 'vec4(color*intensity, intensity)'
+            [alphaStart, alphaEnd] = alphaRange ? [0,1]
+            output = """
+                vec4 alphaFun(vec3 color, float intensity){
+                    float alpha = smoothstep(#{alphaStart.toFixed(8)}, #{alphaEnd.toFixed(8)}, intensity);
+                    return vec4(color*alpha, alpha);
+                }
+            """
         else
-            output = 'vec4(color, 1.0)'
+            output = '''
+                vec4 alphaFun(vec3 color, float intensity){
+                    return vec4(color, 1.0);
+                }
+            '''
 
         @shader = new Shader @gl,
             vertex: vertexShaderBlit
@@ -449,11 +459,12 @@ class WebGLHeatmap
                 }
 
                 #{getColorFun}
+                #{output}
 
                 void main(){
                     float intensity = smoothstep(0.0, 1.0, texture2D(source, texcoord).r);
                     vec3 color = getColor(intensity);
-                    gl_FragColor = #{output};
+                    gl_FragColor = alphaFun(color, intensity);
                 }
             """
 

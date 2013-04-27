@@ -6,6 +6,8 @@
             window.onload = function(){
                 var canvas = document.getElementsByTagName('canvas')[0];
                 var heatmap = createWebGLHeatmap({canvas: canvas, intensityToAlpha:true});
+                //var heatmap = createWebGLHeatmap({canvas: canvas, intensityToAlpha:true, alphaRange: [1, 0]}); // inverse transparency
+                //var heatmap = createWebGLHeatmap({canvas: canvas, intensityToAlpha:true, alphaRange: [0, 0.05]}); // steep transparency
                 //var heatmap = createWebGLHeatmap({canvas: canvas, intensityToAlpha:true, gradientTexture:'deep-sea-gradient.png'});
                 //var heatmap = createWebGLHeatmap({canvas: canvas, intensityToAlpha:false, gradientTexture:'skyline-gradient.png'});
                 //var heatmap = createWebGLHeatmap({width: 500, height: 500}); // statically sized heatmap
