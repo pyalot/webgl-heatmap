@@ -39,7 +39,8 @@
                     heatmap.clear();
                 }
 
-                var raf = window.requestAnimationFrame || window.mozRequestAnimationFrame;
+                var raf = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+                                         window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
 
                 var update = function(){
                     heatmap.adjustSize(); // can be commented out for statically sized heatmaps, resize clears the map
