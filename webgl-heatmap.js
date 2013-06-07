@@ -283,7 +283,7 @@
 
   vertexShaderBlit = 'attribute vec4 position;\nvarying vec2 texcoord;\nvoid main(){\n    texcoord = position.xy*0.5+0.5;\n    gl_Position = position;\n}';
 
-  fragmentShaderBlit = 'precision highp int;\nprecision highp float;\nuniform sampler2D source;\nvarying vec2 texcoord;';
+  fragmentShaderBlit = '#ifdef GL_FRAGMENT_PRECISION_HIGH\n    precision highp int;\n    precision highp float;\n#else\n    precision mediump int;\n    precision mediump float;\n#endif\nuniform sampler2D source;\nvarying vec2 texcoord;';
 
   Heights = (function() {
 
@@ -295,7 +295,7 @@
       this.height = height;
       this.shader = new Shader(this.gl, {
         vertex: 'attribute vec4 position, intensity;\nvarying vec2 off, dim;\nvarying float vIntensity;\nuniform vec2 viewport;\n\nvoid main(){\n    dim = abs(position.zw);\n    off = position.zw;\n    vec2 pos = position.xy + position.zw;\n    vIntensity = intensity.x;\n    gl_Position = vec4((pos/viewport)*2.0-1.0, 0.0, 1.0);\n}',
-        fragment: 'precision highp int;\nprecision highp float;\nvarying vec2 off, dim;\nvarying float vIntensity;\nvoid main(){\n    float falloff = (1.0 - smoothstep(0.0, 1.0, length(off/dim)));\n    float intensity = falloff*vIntensity;\n    gl_FragColor = vec4(intensity);\n}'
+        fragment: '#ifdef GL_FRAGMENT_PRECISION_HIGH\n    precision highp int;\n    precision highp float;\n#else\n    precision mediump int;\n    precision mediump float;\n#endif\nvarying vec2 off, dim;\nvarying float vIntensity;\nvoid main(){\n    float falloff = (1.0 - smoothstep(0.0, 1.0, length(off/dim)));\n    float intensity = falloff*vIntensity;\n    gl_FragColor = vec4(intensity);\n}'
       });
       this.clampShader = new Shader(this.gl, {
         vertex: vertexShaderBlit,
@@ -461,6 +461,12 @@
       } catch (error) {
         throw 'WebGL not supported';
       }
+      if (window.WebGLDebugUtils != null) {
+        console.log('debugging mode');
+        this.gl = WebGLDebugUtils.makeDebugContext(this.gl, function(err, funcName, args) {
+          throw WebGLDebugUtils.glEnumToString(err) + " was caused by call to: " + funcName;
+        });
+      }
       if (!this.gl.getExtension('OES_texture_float')) {
         throw 'No floating point texture support';
       }
@@ -469,7 +475,7 @@
       if (gradientTexture) {
         textureGradient = this.gradientTexture = new Texture(this.gl, {
           channels: 'rgba'
-        }).bind(0).setSize(2, 2).linear().clampToEdge();
+        }).bind(0).setSize(2, 2).nearest().clampToEdge();
         if (typeof gradientTexture === 'string') {
           image = new Image();
           image.onload = function() {

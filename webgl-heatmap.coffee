@@ -186,8 +186,13 @@ vertexShaderBlit = '''
 '''
 
 fragmentShaderBlit = '''
-    precision highp int;
-    precision highp float;
+    #ifdef GL_FRAGMENT_PRECISION_HIGH
+        precision highp int;
+        precision highp float;
+    #else
+        precision mediump int;
+        precision mediump float;
+    #endif
     uniform sampler2D source;
     varying vec2 texcoord;
 '''
@@ -210,8 +215,13 @@ class Heights
                 }
             '''
             fragment: '''
-                precision highp int;
-                precision highp float;
+                #ifdef GL_FRAGMENT_PRECISION_HIGH
+                    precision highp int;
+                    precision highp float;
+                #else
+                    precision mediump int;
+                    precision mediump float;
+                #endif
                 varying vec2 off, dim;
                 varying float vIntensity;
                 void main(){
@@ -380,6 +390,11 @@ class WebGLHeatmap
         catch error
             throw 'WebGL not supported'
 
+        if window.WebGLDebugUtils?
+            console.log 'debugging mode'
+            @gl = WebGLDebugUtils.makeDebugContext @gl, (err, funcName, args) ->
+                throw WebGLDebugUtils.glEnumToString(err) + " was caused by call to: " + funcName
+
         if not @gl.getExtension('OES_texture_float')
             throw 'No floating point texture support'
 
@@ -387,7 +402,7 @@ class WebGLHeatmap
         @gl.blendFunc @gl.ONE, @gl.ONE
 
         if gradientTexture
-            textureGradient = @gradientTexture = new Texture(@gl, channels:'rgba').bind(0).setSize(2, 2).linear().clampToEdge()
+            textureGradient = @gradientTexture = new Texture(@gl, channels:'rgba').bind(0).setSize(2, 2).nearest().clampToEdge()
             if typeof gradientTexture == 'string'
                 image = new Image()
                 image.onload = ->

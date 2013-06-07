@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <!-- script src="https://www.khronos.org/registry/webgl/sdk/debug/webgl-debug.js"></script -->
         <script src="webgl-heatmap.js"></script>
         <script type="text/javascript">
             window.onload = function(){
@@ -12,12 +13,9 @@
                 //var heatmap = createWebGLHeatmap({canvas: canvas, intensityToAlpha:false, gradientTexture:'skyline-gradient.png'});
                 //var heatmap = createWebGLHeatmap({width: 500, height: 500}); // statically sized heatmap
 
-                // just feeding some mouse coords
                 document.body.appendChild(heatmap.canvas);
-                canvas.onmousemove = function(event){
-                    var x = event.offsetX || event.clientX;
-                    var y = event.offsetY || event.clientY;
-                        
+
+                var paintAtCoord = function(x, y){
                     //heatmap.addPoint(x, y, 100, 10/255);
                     
                     var count = 0;
@@ -35,6 +33,25 @@
                         heatmap.addPoint(x+xoff*50, y+yoff*50, 20, 1/300);
                     }
                 }
+
+                // event handling
+                var onTouchMove = function(evt){
+                    evt.preventDefault();
+                    var touches = evt.changedTouches;
+                    for(var i=0; i<touches.length; i++){
+                        var touch = touches[i];
+                        paintAtCoord(touch.pageX, touch.pageY);
+                    }
+                };
+                canvas.addEventListener("touchmove", onTouchMove, false);
+
+                canvas.onmousemove = function(event){
+                    var x = event.offsetX || event.clientX;
+                    var y = event.offsetY || event.clientY;
+
+                    paintAtCoord(x, y);
+                        
+                }
                 canvas.onclick = function(){
                     heatmap.clear();
                 }
@@ -42,6 +59,7 @@
                 var raf = window.requestAnimationFrame || window.mozRequestAnimationFrame;
 
                 var update = function(){
+                    //heatmap.addPoint(100, 100, 100, 10/255);
                     heatmap.adjustSize(); // can be commented out for statically sized heatmaps, resize clears the map
                     heatmap.update(); // adds the buffered points
                     heatmap.display(); // adds the buffered points
