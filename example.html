@@ -56,7 +56,8 @@
                     heatmap.clear();
                 }
 
-                var raf = window.requestAnimationFrame || window.mozRequestAnimationFrame;
+                var raf = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+                                         window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
 
                 var update = function(){
                     //heatmap.addPoint(100, 100, 100, 10/255);
