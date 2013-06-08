@@ -419,7 +419,7 @@
           }
         });
         if (result.length === 0) {
-          if (throws) {
+          if (spec.throws) {
             throw 'No floating point texture support that is ' + spec.require.join(', ');
           } else {
             return null;
