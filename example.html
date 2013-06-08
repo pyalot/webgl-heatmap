@@ -16,8 +16,6 @@
                 document.body.appendChild(heatmap.canvas);
 
                 var paintAtCoord = function(x, y){
-                    //heatmap.addPoint(x, y, 100, 10/255);
-                    
                     var count = 0;
                     while(count < 200){
                         var xoff = Math.random()*2-1;
@@ -30,7 +28,7 @@
                         xoff/=ls; yoff/=ls;
                         xoff*=1-l; yoff*=1-l;
                         count += 1;
-                        heatmap.addPoint(x+xoff*50, y+yoff*50, 20, 1/300);
+                        heatmap.addPoint(x+xoff*50, y+yoff*50, 30, 2/300);
                     }
                 }
 
