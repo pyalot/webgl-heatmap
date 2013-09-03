@@ -1024,6 +1024,14 @@
       return this.heights.addPoint(x, y, size, intensity);
     };
 
+    WebGLHeatmap.prototype.addPoints = function(dataset) { // x, y, size, intensity) {
+      for(var item in dataset) {
+        this.heights.addPoint(item.x, item.y, item.size, item.intensity);   
+      }
+
+    };
+
+
     return WebGLHeatmap;
 
   })();
