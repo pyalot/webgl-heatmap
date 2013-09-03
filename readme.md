@@ -46,6 +46,16 @@ Add a data point.
 heatmap.addPoint(x, y, size, intensity);
 ```
 
+Add a list of data points.
+
+ * x and y relative to the canvas in pixels
+ * size in pixels (radius)
+ * intensity between 0 and 1
+
+```javascript
+heatmap.addPoints([{x:x, y:y, size:size, intensity:intensity}]);
+```
+
 Draw queued data points:
 
 ```javascript
