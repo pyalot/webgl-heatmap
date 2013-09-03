@@ -990,6 +990,6 @@ class WebGLHeatmap
     blur: -> @heights.blur()
 
     addPoint: (x, y, size, intensity) -> @heights.addPoint x, y, size, intensity
-    addPoints: (items) -> (@heights.addPoint item.x, item.y, item.size, item.intensity for item in items)
+    addPoints: (items) -> (@addPoint item.x, item.y, item.size, item.intensity for item in items)
 
 window.createWebGLHeatmap = (params) -> new WebGLHeatmap(params)
