@@ -86,6 +86,12 @@ Blur all values a little:
 heatmap.blur()
 ```
 
+Clear the heatmap:
+
+```javascript
+heatmap.clear()
+```
+
 License
 -------
 
